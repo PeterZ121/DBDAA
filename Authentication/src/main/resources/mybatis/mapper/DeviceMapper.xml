@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+
+<mapper namespace="com.lz.blockchainauthentication.mapper.DeviceMapper">
+
+    <insert id="insertDevice">
+        insert into device(id, private_key, public_key)
+        values(#{id},#{privateKey},#{publicKey});
+    </insert>
+
+    <select id="selectDeviceById" resultType="com.lz.blockchainauthentication.POJO.Device">
+        select * from device where id=#{id};
+    </select>
+
+    <update id="updateById">
+        update device
+        set
+            registered = 1 ,
+            ddid = #{DDID} ,
+            building_num = #{buildingNum}
+        where id=#{id}
+    </update>
+
+    <select id="selectDeviceByDDID" resultType="com.lz.blockchainauthentication.POJO.Device">
+        select * from device where ddid=#{DDID};
+    </select>
+
+    <select id="selectDDIDByNotLimited" resultType="string">
+        select ddid from device where limited=0;
+    </select>
+
+    <select id="selectAllDevice" resultType="map">
+        select * from device;
+    </select>
+
+</mapper>

@@ -1,0 +1,21 @@
+# Copyright IBM Corp. All Rights Reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+# ---------------------------------------------------------------------------
+# "PeerOrgs" - Definition of organizations managing peer nodes
+# ---------------------------------------------------------------------------
+PeerOrgs:
+  # ---------------------------------------------------------------------------
+  # Org9
+  # ---------------------------------------------------------------------------
+  - Name: Org9
+    Domain: org9.example.com
+    EnableNodeOUs: true
+    Template:
+      Count: 2   #生成证书的数量  => 组织中peer节点的数目
+      SANS:
+        - localhost
+    Users:
+      Count: 1  #生成用户证书个数

@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+
+<mapper namespace="com.lz.blockchainauthentication.mapper.UserMapper">
+
+    <insert id="insertRealUser">
+        insert into real_user
+        values(#{mdid},#{pk},#{merkleRoot});
+    </insert>
+
+    <select id="selectMerkleRootByMDID" resultType="string">
+        select merkle_root from real_user where mdid = #{mdid};
+    </select>
+
+    <select id="selectCountByMDID" resultType="int">
+        select count(*) from real_user where mdid = #{mdid};
+    </select>
+
+    <insert id="insertAnonymousUser">
+        insert into anonymous_user
+        values(#{adid},#{pk},#{hM});
+    </insert>
+
+    <select id="selectCountByADID" resultType="int">
+        select count(*) from anonymous_user where adid = #{adid};
+    </select>
+
+    <select id="selectHMByADID" resultType="string">
+        select hM from anonymous_user where adid = #{adid};
+    </select>
+
+
+
+</mapper>

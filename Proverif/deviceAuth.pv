@@ -1,0 +1,154 @@
+(* Channel Definition *)
+free LedgerNet : channel.
+free regNet : channel.
+free authNet : channel.
+
+
+(* Private Terms *)
+free sk_j : bitstring[private].
+free sk_ESP : bitstring[private].
+free sk_mn : bitstring[private].
+free data : bitstring[private].
+free device_vc : bitstring[private].
+free sigma_data : bitstring[private].
+free sigma_dev : bitstring[private].
+
+
+(* Public Terms *)
+const P : bitstring.
+const b_true : bitstring. 
+const b_false : bitstring. 
+const ACK : bitstring.
+const NACK : bitstring.
+
+
+(* Functions *)
+fun PointMul(bitstring, bitstring) : bitstring.
+fun PointMulOut(bitstring, bitstring) : bitstring.
+fun PointAdd(bitstring, bitstring) : bitstring.
+fun ConcatTwo(bitstring, bitstring) : bitstring.
+fun ConcatThree(bitstring, bitstring, bitstring) : bitstring.
+fun ConcatFour(bitstring, bitstring, bitstring, bitstring) : bitstring.
+fun HashFunOne(bitstring) : bitstring.
+fun Sign(bitstring, bitstring): bitstring.
+
+
+(* Destructors *)
+reduc forall PT : bitstring, m : bitstring; PointSub(PointAdd(PT,m),m) = PT.
+reduc forall m1 : bitstring, m2 : bitstring; SeparateFirst2(ConcatTwo(m1, m2)) = m1.
+reduc forall m1 : bitstring, m2 : bitstring; SeparateSecond2(ConcatTwo(m1, m2)) = m2.
+reduc forall m1 : bitstring, m2 : bitstring, m3 : bitstring; SeparateFirst3(ConcatThree(m1, m2, m3)) = m1.
+reduc forall m1 : bitstring, m2 : bitstring, m3 : bitstring; SeparateSecond3(ConcatThree(m1, m2, m3)) = m2.
+reduc forall m1 : bitstring, m2 : bitstring, m3 : bitstring; SeparateThird3(ConcatThree(m1, m2, m3)) = m3.
+reduc forall m1 : bitstring, m2 : bitstring, m3 : bitstring, m4 : bitstring; SeparateFirst4(ConcatFour(m1, m2, m3, m4)) = m1.
+reduc forall m1 : bitstring, m2 : bitstring, m3 : bitstring, m4 : bitstring; SeparateSecond4(ConcatFour(m1, m2, m3, m4)) = m2.
+reduc forall m1 : bitstring, m2 : bitstring, m3 : bitstring, m4 : bitstring; SeparateThird4(ConcatFour(m1, m2, m3, m4)) = m3.
+reduc forall m1 : bitstring, m2 : bitstring, m3 : bitstring, m4 : bitstring; SeparateFourth4(ConcatFour(m1, m2, m3, m4)) = m4.
+reduc forall m: bitstring, sk: bitstring; Verify(PointMul(sk, P), m, Sign(m, sk)) = b_true .
+
+
+(* Equations *)
+equation forall m1 : bitstring, m2: bitstring ; PointMulOut(m1, PointMul(m2, P)) = PointMul(m2, PointMul(m1, P)).
+
+
+(* Events *)
+event RegInitiation (bitstring).
+event RegTermination (bitstring).
+event SessionInitiation (bitstring).
+event SessionTermination (bitstring).
+
+
+(* Queries *)
+(* Confidentiality*)
+query attacker(device_vc).
+query attacker(data).
+
+(* Certification *)
+query attacker(sigma_data).
+query attacker(sigma_dev).
+
+
+(* To check the resistance against impersonation, modification, and replay attacks *)
+query t : bitstring; inj-event (RegTermination (t)) ==> inj-event (RegInitiation (t)).
+query t : bitstring; inj-event (SessionTermination (t)) ==> inj-event (SessionInitiation (t)).
+
+
+let DEVICE=
+    in(LedgerNet, pk_ESP:bitstring);
+    in(LedgerNet, pk_mn:bitstring);
+    new id_j : bitstring;
+    new t_reg : bitstring;
+    let pk_j = PointMul(sk_j, P) in 
+    let PT1 = ConcatThree(id_j, pk_j, t_reg) in
+    new r1 :  bitstring;
+    let R1 = PointMul(r1, P) in
+    let CT1 = PointAdd(PT1, PointMulOut(r1, pk_ESP)) in
+    event RegInitiation (t_reg);
+    out(regNet, (CT1, R1));
+    in (regNet, (CT2:bitstring, R2:bitstring));
+    let device_vc = PointSub(CT2, PointMulOut(sk_j, R2)) in
+    event RegTermination (t_reg);
+    new data : bitstring;
+    new t_data : bitstring;
+    let ddid = SeparateFirst3(device_vc) in
+    let sigma_data = Sign(ConcatThree(data, device_vc, t_data), sk_j) in
+    let PT3 = ConcatFour(data, device_vc, t_data, sigma_data) in
+    new r3 : bitstring;
+    let R3 = PointMul(r3, P) in 
+    let CT3 = PointAdd(PT3, PointMulOut(r3, pk_mn)) in
+    event SessionInitiation(t_data);
+    out(authNet, (CT3, R3));
+    in(authNet, status:bitstring);
+    event SessionTermination(t_data);   
+    0.
+
+    
+let ESP=
+    let pk_ESP = PointMul(sk_ESP, P) in
+    out(LedgerNet, pk_ESP);
+    in(regNet, (CT1:bitstring, R1:bitstring));
+    let PT1 = PointSub(CT1, PointMulOut(sk_ESP, R1)) in
+    let id_j = SeparateFirst3(PT1) in
+    let pk_j = SeparateSecond3(PT1) in
+    let t_reg = SeparateThird3(PT1) in
+    let ddid = HashFunOne(id_j) in
+    new t_dev:bitstring;
+    let sigma_dev = Sign(ConcatTwo(ddid,t_dev),sk_ESP) in
+    let PT2 = ConcatThree(ddid, t_dev, sigma_dev) in 
+    new r2 : bitstring;
+    let R2 = PointMul(r2, P) in
+    let CT2 = PointAdd(PT2, PointMulOut(r2, pk_j)) in
+    out(LedgerNet, pk_j);
+    out(regNet, (CT2, R2));
+    0.
+
+
+let MN=
+
+    in(LedgerNet, pk_ESP:bitstring);
+    let pk_mn = PointMul(sk_mn, P) in
+    out(LedgerNet, pk_mn);
+    in(LedgerNet, pk_j:bitstring);
+    in(authNet, (CT3:bitstring, R3:bitstring));
+    let PT3 = PointSub(CT3, PointMulOut(sk_mn, R3)) in
+    let data = SeparateFirst4(PT3) in
+    let device_vc = SeparateSecond4(PT3) in
+    let t_data = SeparateThird4(PT3) in
+    let sigma_data = SeparateFourth4(PT3) in
+    let ddid = SeparateFirst3(device_vc) in
+    let t_dev = SeparateSecond3(device_vc) in
+    let sigma_dev = SeparateThird3(device_vc) in
+    let status = NACK in
+    if Verify(pk_j, ConcatThree(data, device_vc, t_data), sigma_data) = b_true && Verify(pk_ESP, ConcatTwo(ddid, t_dev), sigma_dev) = b_true then
+        let status=ACK in
+    out(authNet, status);
+    0.
+
+
+process
+((ESP) | (!DEVICE) | (MN))
+
+
+
+
+

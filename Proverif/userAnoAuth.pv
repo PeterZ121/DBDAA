@@ -1,0 +1,114 @@
+(* Channel Definition *)
+free net : channel.
+
+
+(* Private Terms *)
+free sigma_svc : bitstring[private].
+free sigma_ij : bitstring[private].
+free sigma_res : bitstring[private].
+free anon_vc : bitstring[private].
+free mdid : bitstring[private].
+
+
+(* Public Terms *)
+free adid: bitstring.
+free ddid: bitstring.
+free t_svc: bitstring.
+const PK_S : bitstring.
+const ACK : bitstring.
+const NACK : bitstring.
+const b_true : bitstring. 
+const b_false : bitstring. 
+
+
+(* Functions *)
+fun CreatePk(bitstring): bitstring.
+fun GetPk(bitstring): bitstring.
+fun GetDid(bitstring): bitstring.
+fun Sign(bitstring, bitstring): bitstring.
+fun Verify(bitstring, bitstring, bitstring): bitstring.
+fun s_Sign(bitstring): bitstring.
+fun s_Verify(bitstring, bitstring, bitstring): bitstring.                                                                                                                                               
+fun ConcatVc(bitstring, bitstring, bitstring, bitstring) : bitstring.
+fun ConcatMsg(bitstring, bitstring) : bitstring.
+
+
+(* Destructors *)
+reduc forall m1 : bitstring, m2 : bitstring; get_msg_1(ConcatMsg(m1, m2)) = m1.
+reduc forall m1 : bitstring, m2 : bitstring; get_msg_2(ConcatMsg(m1, m2)) = m2.
+reduc forall m1 : bitstring, m2 : bitstring, m3 : bitstring, m4 : bitstring; get_vc_1(ConcatVc(m1, m2, m3, m4)) = m1.
+reduc forall m1 : bitstring, m2 : bitstring, m3 : bitstring, m4 : bitstring; get_vc_2(ConcatVc(m1, m2, m3, m4)) = m2.
+reduc forall m1 : bitstring, m2 : bitstring, m3 : bitstring, m4 : bitstring; get_vc_3(ConcatVc(m1, m2, m3, m4)) = m3.
+reduc forall m1 : bitstring, m2 : bitstring, m3 : bitstring, m4 : bitstring; get_vc_4(ConcatVc(m1, m2, m3, m4)) = m4.
+
+
+(* Equations *)
+equation forall m: bitstring, sk: bitstring; Verify(CreatePk(sk), m, Sign(m, sk)) = b_true.
+equation forall m: bitstring, pk: bitstring; s_Verify(PK_S, m, s_Sign(m)) = b_true.
+
+
+(* Events *)
+event SessionInitiation (bitstring, bitstring).
+event SessionTermination (bitstring, bitstring).
+
+
+(* Queries *)
+(* Confidentiality*)
+query attacker (anon_vc).
+
+(* Certification *)
+query attacker(sigma_svc).
+query attacker(sigma_ij).
+query attacker(sigma_res).
+
+(* To check the resistance against impersonation, modification, and replay attacks *)
+query adid : bitstring, ddid : bitstring; inj-event (SessionTermination (adid, ddid)) ==> inj-event (SessionInitiation (adid,ddid)).
+
+(* Anonymity *)
+query attacker (adid).
+query attacker (ddid).
+query attacker (mdid).
+noninterf mdid.
+
+
+let USER = 
+  new sk_i : bitstring;
+  new mdid : bitstring;
+  in(net, ddid:bitstring);
+  let adid = GetDid(sk_i) in
+  let pk_i = CreatePk(sk_i) in
+  let pk_j = GetPk(ddid) in
+  let sigma_ij = s_Sign(ConcatMsg(adid, ddid)) in
+  new t_ano : bitstring;
+  let anon_vc = ConcatVc(adid, ddid, sigma_ij, t_ano) in
+  new t_svc : bitstring;
+  let sigma_svc = Sign(ConcatMsg(anon_vc,t_svc), sk_i) in
+  event SessionInitiation(adid, ddid);
+  out(net, (anon_vc, t_svc, sigma_svc));
+  in (net,  (status:bitstring , t_res:bitstring, sigma_res:bitstring));
+  if status = ACK then
+    if Verify(pk_j, ConcatMsg(status, t_res), sigma_res) = b_true then
+      event SessionTermination(adid, ddid);
+  0.
+
+
+let DEVICE = 
+  new sk_j : bitstring;
+  let ddid = GetDid(sk_j) in
+  out(net, ddid);
+  in(net, (anon_vc:bitstring, t_svc:bitstring, sigma_svc:bitstring));
+  let pk_j = CreatePk(sk_j) in
+  let adid = get_vc_1(anon_vc) in
+  let pk_i = GetPk(adid) in
+  new t_res: bitstring;
+  let sigma_ij = get_vc_3(anon_vc) in
+  let status = NACK in
+  if Verify(pk_i, ConcatMsg(anon_vc,t_svc), sigma_svc) =b_true && s_Verify(PK_S, ConcatMsg(adid, ddid), sigma_ij) = b_true then  
+    let status = ACK in    
+    let sigma_res = Sign(ConcatMsg(ACK, t_res), sk_j) in
+  out(net, (status, t_res, sigma_res));
+  0.
+
+
+process
+((!USER) | (!DEVICE))

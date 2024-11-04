@@ -1,0 +1,18 @@
+
+server:
+  port: 9002
+
+spring:
+  application:
+    name: BlockChainAuthentication
+
+  datasource:
+    username:
+    password:
+    url:
+    driver-class-name:
+
+
+mybatis:
+  mapper-locations: classpath:mybatis/mapper/*.xml
+  config-location: classpath:mybatis/mybatis.xml
