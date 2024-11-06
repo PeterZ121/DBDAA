@@ -12,3 +12,9 @@ This repository contains the code implementation for the paper titled "**DBDAA: 
   
 - **HyperledgerFabric**: Holds the code for the blockchain implementation using Hyperledger Fabric, which supports the dual blockchain aspect of DBDAA.
 
+## Acknowledgements
+We gratefully thank the authors from reedsolo for open-sourcing their code.
+
+We would like to thank the reviewers for their careful reading and comments on our manuscript, in order to facilitate the better presentation of our paper.
+
+The project is funded in part by the National Natural Science Foundation of China (Grant No.62071111) and atural Science Foundation of Xinjiang Uygur Autonomous Region (Grant No.2023D01A63).
