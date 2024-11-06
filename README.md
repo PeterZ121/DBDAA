@@ -13,6 +13,59 @@ This repository contains the code implementation for the paper titled "**DBDAA: 
 - **HyperledgerFabric**: Holds the code for the blockchain implementation using Hyperledger Fabric, which supports the dual blockchain aspect of DBDAA.
 ---
 
+
+## HyperledgerFabric Model
+
+
+#### Project Structure
+
+- The `fabric-lz_new_new/bin` directory contains the binary source files for the Hyperledger Fabric blockchain.
+
+- The `fabric-lz_new_new/config` directory defines the basic configuration details for the blockchain network.
+
+- The `fabric-lz_new_new/asset-transfer-basic/chaincode-go` directory holds the chaincode, with the specific file located at `chaincode-go/chaincode/smartcontract.go`.
+
+- The `fabric-lz_new_new/asset-transfer-basic/private_blockchain_ESP` directory serves as the blockchain backend server, responsible for invoking the chaincode as an ESP node.
+
+- The `fabric-lz_new_new/test-network` directory includes configuration files for the test network. The `compose` and `configtx` folders contain the base network configurations, while the `addOrgx` folder includes configurations for adding new organizations to the blockchain network.
+
+#### Startup Commands
+
+1. **Start Private Blockchain with ESP and MN_cre Nodes Only**
+
+   Run the following command in the `fabric-lz_new_new/test-network` directory:
+
+   ```bash
+   ./demo1.sh
+   ```
+
+2. **Start Consortium Blockchain with ESP, MN_cre, MN, user, and device Nodes Only**
+
+   Run the following command in the `fabric-lz_new_new/test-network` directory:
+
+   ```bash
+   ./demo2.sh
+   ```
+
+3. **Start Both Private and Consortium Blockchains with Related Nodes**
+
+   Run the following command in the `fabric-lz_new_new/test-network` directory:
+
+   ```bash
+   ./demo.sh
+   ```
+
+4. **Start Blockchain Backend Server**
+
+   Run the following command in the `fabric-lz_new_new/asset-transfer-basic/private_blockchain_ESP` directory:
+
+   ```bash
+   go run .
+   ```
+
+
+---
+
 ## Authentication Module
 
 This folder contains a Java Spring Boot application that provides cryptographic operations and authentication services for the DBDAA model. This module supports various roles in the DBDAA system, enabling functions required for IoT environments.
